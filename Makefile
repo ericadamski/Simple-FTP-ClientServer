@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-c -Wall
+CFLAGS=-c -Wall -std=c++11
 CLANG=-std=c++11
 
 FTP: server.o main.cpp
