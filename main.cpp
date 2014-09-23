@@ -6,7 +6,7 @@
 int main(int argc, char* argv[])
 {
   const char* HELP = "Usage: FTP [ip_address] [port]\n";
-  const char* MENU = "Options : \n\t [1] Input commands \n\t [0] Quit \n";
+  const char* MENU = "Options : \n\t [1] Begin Connection? \n\t [0] Quit \n";
 
   if(argc < 2)
   {
