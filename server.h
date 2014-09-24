@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 #include <unistd.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
@@ -19,6 +20,7 @@ class Server
     void Close();
     void printHelp();
     void error(const char*);
+    void Listen();
 
   private:
     std::list<int> *m_connections;
@@ -32,8 +34,6 @@ class Server
     int m_connectionSocket;
     int createSocket();
     int getNewCommunicationPort();
-
-    void Listen();
 };
 
 #endif
