@@ -27,19 +27,14 @@ void Client::Connect()
     fprintf(stderr, "ERROR connecting to server.\n");
   else
   {
-    printf("Type [quit] in order to close the connection.");
-    while(std::cin)
+    printf("Type [quit] in order to close the connection.\n");
+    std::string line;
+    while(line != "quit")
     {
-      std::string line;
       std::getline(std::cin, line);
-
       if(!line.empty())
-      {
-        if(line == "quit")
-          break;
         Send(line);
-        Receive();
-      }
+      Receive();
     }
   }
   close(m_connectionSocket);
@@ -79,6 +74,7 @@ int Client::Receive()
     fprintf(stderr, "ERROR receiving message.");
     return -1;
   }
+  printf("%s\n", buffer);
   return 0;
 }
 

@@ -35,6 +35,7 @@ int Server::createSocket()
 void Server::Close()
 {
   close(m_connectionSocket);
+  close(m_acceptSocket);
 }
 
 void Server::printHelp()
@@ -51,7 +52,7 @@ int Server::Send(std::string msg)
     return -1;
   }
   strcpy(buffer, msg.c_str());
-  m_send = write(m_connectionSocket, buffer, sizeof(buffer));
+  m_send = write(m_acceptSocket, buffer, sizeof(buffer));
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -63,23 +64,18 @@ int Server::Send(std::string msg)
 int Server::Receive()
 {
   zeroBuffer();
-  m_receive = read(m_connectionSocket, buffer, 255);
+  m_receive = read(m_acceptSocket, buffer, 255);
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR reading message.");
     return -1;
   }
+  printf("%s\n",buffer);
   return 0;
 }
 
 void Server::zeroBuffer()
 { bzero(buffer, 256); }
-
-int Server::getNewCommunicationPort()
-{
-  //TODO
-  return -1;
-}
 
 void Server::Listen()
 {
@@ -90,18 +86,23 @@ void Server::Listen()
   else
   {
     listen(m_connectionSocket, 5);
-    printf("Server is now listening on port %d.\n Type [quit] to shutdown server.", m_port);
-    while(std::cin)
+    printf("Server is now listening on port %d.\n Type [quit] to shutdown server.\n", m_port);
+    m_clientLength = sizeof(m_clientAddress);
+    m_acceptSocket = accept(m_connectionSocket,
+                            (struct sockaddr *) &m_clientAddress, &m_clientLength);
+    if(m_acceptSocket < 0)
+    {
+      fprintf(stderr, "ERROR on accept.\n");
+    }
+    else
     {
       std::string line;
-      std::getline(std::cin, line);
-
-      if( !line.empty() )
+      while(line != "quit")
       {
-        if(line == "quit")
-          break;
         Receive();
-        Send(line.c_str());
+        std::getline(std::cin, line);
+        if( !line.empty() || line != "quit" )
+          Send(line);
       }
     }
   }

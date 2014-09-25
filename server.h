@@ -27,21 +27,22 @@ class Server
     int Receive();
 
   private:
-    std::list<int> *m_connections;
-
     const int PORT = 30000;
 
     struct sockaddr_in m_address;
+    struct sockaddr_in m_clientAddress;
+
+    socklen_t m_clientLength;
 
     char buffer[256];
 
     int m_connectionSocket;
+    int m_acceptSocket;
     int m_send;
     int m_receive;
     int m_port;
 
     int createSocket();
-    int getNewCommunicationPort();
 
     void zeroBuffer();
 };
