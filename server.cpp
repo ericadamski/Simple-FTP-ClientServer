@@ -72,7 +72,7 @@ int Server::Receive()
     return -1;
   }
   fflush(stdout);
-  printf("RECEIVE : %s\n",buffer);
+  printf("RECEIVE : %s, received %d bytes\n",buffer, m_receive);
   return 0;
 }
 
@@ -101,7 +101,7 @@ void Server::Listen()
       std::string line;
       while(printf("> "), std::getline(std::cin, line), line != "quit")
       {
-        if(Receive() <= 0)
+        if(Receive() > 0)
         {
           if( !line.empty() || line != "quit" )
             Send(line);

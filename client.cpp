@@ -29,7 +29,7 @@ void Client::Connect()
   {
     printf("Type [quit] in order to close the connection.\n");
     std::string line;
-    while(line != "quit", printf("> "), std::getline(std::cin, line))
+    while(printf("> "), std::getline(std::cin, line), line != "quit")
     {
       if(!line.empty() || line != "quit")
       {
@@ -37,7 +37,7 @@ void Client::Connect()
         {
           fflush(stdin);
           line = '\0';
-          if(Receive() < 0)
+          if(Receive() < 1)
             break;
          }
       }
