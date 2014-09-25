@@ -52,7 +52,7 @@ int Server::Send(std::string msg)
     return -1;
   }
   strcpy(buffer, msg.c_str());
-  printf("SEND");
+  printf("SEND : %s\n", buffer);
   m_send = send(m_acceptSocket, buffer, sizeof(buffer), 0);
   if( m_send < 0 )
   {
@@ -71,6 +71,7 @@ int Server::Receive()
     fprintf(stderr, "ERROR reading message.");
     return -1;
   }
+  fflush(stdout);
   printf("RECEIVE : %s\n",buffer);
   return 0;
 }
@@ -98,14 +99,15 @@ void Server::Listen()
     else
     {
       std::string line;
-      while(line != "quit")
+      while(printf("> "), std::getline(std::cin, line), line != "quit")
       {
-        if(Receive() == 0)
+        if(Receive() <= 0)
         {
-          std::getline(std::cin, line);
           if( !line.empty() || line != "quit" )
             Send(line);
         }
+        fflush(stdin);
+        line = '\0'; 
       }
     }
   }

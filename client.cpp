@@ -29,13 +29,17 @@ void Client::Connect()
   {
     printf("Type [quit] in order to close the connection.\n");
     std::string line;
-    while(line != "quit")
+    while(line != "quit", printf("> "), std::getline(std::cin, line))
     {
-      std::getline(std::cin, line);
       if(!line.empty() || line != "quit")
       {
-        if(Send(line) == 0)
-          Receive();
+        if(Send(line) >= 0)
+        {
+          fflush(stdin);
+          line = '\0';
+          if(Receive() < 0)
+            break;
+         }
       }
     }
   }
@@ -58,14 +62,15 @@ int Client::Send(std::string msg)
     return -1;
   }
   strcpy(buffer, msg.c_str());
-   printf("SEND : ");
+  printf("SEND : %s", buffer);
   m_send = send(m_connectionSocket, buffer, sizeof(buffer), 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
     return -1;
   }
-   return 0;
+  printf("message sent\n");
+  return 0;
 }
 
 int Client::Receive()
@@ -77,6 +82,7 @@ int Client::Receive()
     fprintf(stderr, "ERROR receiving message.");
     return -1;
   }
+  fflush(stdout);
   printf("RECEIVE : %s\n", buffer);
   return 0;
 }
