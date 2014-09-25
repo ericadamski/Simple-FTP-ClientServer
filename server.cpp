@@ -52,7 +52,8 @@ int Server::Send(std::string msg)
     return -1;
   }
   strcpy(buffer, msg.c_str());
-  m_send = write(m_acceptSocket, buffer, sizeof(buffer));
+  printf("SEND");
+  m_send = send(m_acceptSocket, buffer, sizeof(buffer), 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -64,13 +65,13 @@ int Server::Send(std::string msg)
 int Server::Receive()
 {
   zeroBuffer();
-  m_receive = read(m_acceptSocket, buffer, 255);
+  m_receive = recv(m_acceptSocket, buffer, 255, 0);
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR reading message.");
     return -1;
   }
-  printf("%s\n",buffer);
+  printf("RECEIVE : %s\n",buffer);
   return 0;
 }
 
@@ -99,10 +100,12 @@ void Server::Listen()
       std::string line;
       while(line != "quit")
       {
-        Receive();
-        std::getline(std::cin, line);
-        if( !line.empty() || line != "quit" )
-          Send(line);
+        if(Receive() == 0)
+        {
+          std::getline(std::cin, line);
+          if( !line.empty() || line != "quit" )
+            Send(line);
+        }
       }
     }
   }

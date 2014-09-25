@@ -32,9 +32,11 @@ void Client::Connect()
     while(line != "quit")
     {
       std::getline(std::cin, line);
-      if(!line.empty())
-        Send(line);
-      Receive();
+      if(!line.empty() || line != "quit")
+      {
+        if(Send(line) == 0)
+          Receive();
+      }
     }
   }
   close(m_connectionSocket);
@@ -56,7 +58,8 @@ int Client::Send(std::string msg)
     return -1;
   }
   strcpy(buffer, msg.c_str());
-  m_send = write(m_connectionSocket, buffer, sizeof(buffer));
+   printf("SEND : ");
+  m_send = send(m_connectionSocket, buffer, sizeof(buffer), 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -68,13 +71,13 @@ int Client::Send(std::string msg)
 int Client::Receive()
 {
   zeroBuffer();
-  m_receive = read(m_connectionSocket, buffer, 255);
+  m_receive = recv(m_connectionSocket, buffer, 255, 0);
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR receiving message.");
     return -1;
   }
-  printf("%s\n", buffer);
+  printf("RECEIVE : %s\n", buffer);
   return 0;
 }
 
