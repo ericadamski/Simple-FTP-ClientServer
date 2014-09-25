@@ -14,13 +14,17 @@
 class Server
 {
   public:
-    Server(); //TODO: we may need to add a constructor that takes a port number as a param.
+    Server();
+    Server(std::string);
     ~Server();
 
     void Close();
     void printHelp();
     void error(const char*);
     void Listen();
+    
+    int Send(std::string);
+    int Receive();
 
   private:
     std::list<int> *m_connections;
@@ -32,8 +36,14 @@ class Server
     char buffer[256];
 
     int m_connectionSocket;
+    int m_send;
+    int m_receive;
+    int m_port;
+
     int createSocket();
     int getNewCommunicationPort();
+
+    void zeroBuffer();
 };
 
 #endif

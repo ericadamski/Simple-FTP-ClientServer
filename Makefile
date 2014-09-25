@@ -2,8 +2,8 @@ CC=g++
 CFLAGS=-c -Wall -std=c++11
 CLANG=-std=c++11
 
-FTP: server.o main.cpp
-	    $(CC) $(CLANG) server.o main.cpp -o FTP
+FTP: client.o server.o main.cpp
+	    $(CC) $(CLANG) server.o client.o main.cpp -o FTP
 
 server.o: server.h server.cpp
 	          $(CC) $(CFLAGS) server.cpp
