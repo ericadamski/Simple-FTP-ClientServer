@@ -53,7 +53,7 @@ int Client::Send(struct Header *msg)
 
 int Client::Receive(int size)
 {
-  char *buffer = (char *)malloc(sizeof(size));
+  char *buffer = (char *)malloc(size);
   zeroBuffer(buffer);
   m_receive = recv(m_connectionSocket, buffer, size, 0);
   if( m_receive < 0 )

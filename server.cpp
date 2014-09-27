@@ -43,41 +43,34 @@ void Server::printHelp()
   //TODO
 }
 
-int Server::Send(std::string msg)
+int Server::Send(struct CmdResponse *msg)
 {
-  zeroBuffer();
-  if( sizeof(msg) > 255 )
-  {
-    fprintf(stderr, "ERROR : Message cannot send. Message is too long.");
-    return -1;
-  }
-  strcpy(buffer, msg.c_str());
-  printf("SEND : %s\n", buffer);
-  m_send = send(m_acceptSocket, buffer, sizeof(buffer), 0);
+  m_send = send(m_acceptSocket, msg, sizeof(msg->size), 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
     return -1;
   }
+  printf("Message sent. \n");
   return m_send;
 }
 
-int Server::Receive()
+int Server::Receive(int size)
 {
-  zeroBuffer();
-  m_receive = recv(m_acceptSocket, buffer, 256, 0);
+  char *buffer = (char *)malloc(size);
+  m_receive = recv(m_acceptSocket, buffer, size, 0);
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR reading message.");
     return -1;
   }
-  fflush(stdout);
-  printf("RECEIVE : %s, received %d bytes\n",buffer, m_receive);
+  m_buffer = (char *)malloc(sizeof(buffer));
+  m_buffer = buffer;
   return m_receive;
 }
 
-void Server::zeroBuffer()
-{ bzero(buffer, 256); }
+void Server::zeroBuffer(char *buffer)
+{ bzero(buffer, sizeof(buffer)); }
 
 void Server::Listen()
 {
@@ -96,21 +89,36 @@ void Server::Listen()
     {
       fprintf(stderr, "ERROR on accept.\n");
     }
-    else
-    {
-      std::string line;
-      while(Receive() > 0)
-      {
-        printf("> "); 
-        std::getline(std::cin, line);
-        if(line == "quit")
-          break;
-        if( !line.empty() )
-            Send(line);
-        fflush(stdin);
-        line = '\0'; 
-      }
-    }
   }
   Close();
+}
+
+int Server::getFileSize(char *fileName)
+{
+  FILE *file = fopen(fileName, "r");
+  fseek(file, 0, SEEK_END);
+  return ftell(file);
+} 
+
+int Server::sendResponse()
+{
+  Receive(256);
+  return 0;
+}
+
+int Server::handleLsCmd()
+{
+
+  return 0;
+}
+
+int Server::handleGetCmd()
+{
+  return 0;
+
+}
+
+int Server::handlePutCmd()
+{
+  return 0;
 }

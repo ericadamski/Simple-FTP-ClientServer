@@ -10,6 +10,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "messages.h"
 
 class Server
 {
@@ -19,12 +20,11 @@ class Server
     ~Server();
 
     void Close();
-    void printHelp();
     void error(const char*);
     void Listen();
     
-    int Send(std::string);
-    int Receive();
+    int Send(struct CmdResponse*);
+    int Receive(int);
 
   private:
     const int PORT = 30000;
@@ -34,7 +34,7 @@ class Server
 
     socklen_t m_clientLength;
 
-    char buffer[256];
+    char *m_buffer;
 
     int m_connectionSocket;
     int m_acceptSocket;
@@ -43,8 +43,14 @@ class Server
     int m_port;
 
     int createSocket();
+    int getFileSize(char*);
+    int sendResponse();
+    int handleGetCmd();
+    int handleLsCmd();
+    int handlePutCmd();
 
-    void zeroBuffer();
+    void zeroBuffer(char*);
+    void printHelp();
 };
 
 #endif
