@@ -34,7 +34,11 @@ private:
   char buffer[256];
 
   int createSocket();
+  int sendCommand(std::string);
 
+  void handleGetCmd();
+  void handleLsCmd();
+  void handlePutCmd();
   void zeroBuffer();
 };
 

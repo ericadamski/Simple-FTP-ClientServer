@@ -33,13 +33,10 @@ void Client::Connect()
     {
       if(!line.empty() || line != "quit")
       {
-        if(Send(line) >= 0)
-        {
-          fflush(stdin);
-          line = '\0';
-          if(Receive() < 1)
-            break;
-         }
+        Send(line);
+        fflush(stdin);
+        line = '\0';
+        Receive();
       }
     }
   }
@@ -76,7 +73,7 @@ int Client::Send(std::string msg)
 int Client::Receive()
 {
   zeroBuffer();
-  m_receive = recv(m_connectionSocket, buffer, 255, 0);
+  m_receive = recv(m_connectionSocket, buffer, 256, 0);
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR receiving message.");
