@@ -28,17 +28,6 @@ void Client::Connect()
   else
   {
     printf("Type [quit] in order to close the connection.\n");
-    std::string line;
-    while(printf("> "), std::getline(std::cin, line), line != "quit")
-    {
-      if(!line.empty() || line != "quit")
-      {
-        Send(line);
-        fflush(stdin);
-        line = '\0';
-        Receive();
-      }
-    }
   }
   close(m_connectionSocket);
 }
@@ -50,30 +39,23 @@ int Client::createSocket()
   return m_connectionSocket;
 }
 
-int Client::Send(std::string msg)
+int Client::Send(struct Header *msg)
 {
-  zeroBuffer();
-  if( sizeof(msg) > 255 )
-  {
-    fprintf(stderr, "ERROR Message is to large.");
-    return -1;
-  }
-  strcpy(buffer, msg.c_str());
-  printf("SEND : %s", buffer);
-  m_send = send(m_connectionSocket, buffer, sizeof(buffer), 0);
+  m_send = send(m_connectionSocket, msg, sizeof(msg->size), 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
     return -1;
   }
-  printf("message sent\n");
-  return 0;
+  printf(" message sent\n");
+  return m_send;
 }
 
-int Client::Receive()
+int Client::Receive(int size)
 {
-  zeroBuffer();
-  m_receive = recv(m_connectionSocket, buffer, 256, 0);
+  char *buffer = (char *)malloc(sizeof(size));
+  zeroBuffer(buffer);
+  m_receive = recv(m_connectionSocket, buffer, size, 0);
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR receiving message.");
@@ -81,10 +63,95 @@ int Client::Receive()
   }
   fflush(stdout);
   printf("RECEIVE : %s\n", buffer);
+  m_buffer = (char *)malloc(sizeof(buffer));
+  m_buffer = buffer;
+  free(buffer);
+  return m_receive;
+}
+
+int Client::sendCommand(MsgID::Type type, std::string command)
+{
+  //send header
+  sendHeader(type, command);
+  Receive(256);
+  //struct CmdResponse *cmd = m_buffer;
+  //Receive(cmd->size);
+  //call specific handler
+  switch(type)
+  {
+    case MsgID::Type::LS:
+      return handleLsCmd();
+    case MsgID::Type::GET:
+      return handleGetCmd();
+    case MsgID::Type::PUT:
+      return handlePutCmd();
+    case MsgID::Type::HELP:
+      return 1;
+    default:
+      return -1;
+  }
+}
+
+int Client::sendHeader(MsgID::Type type, std::string command)
+{
+  switch(type)
+  {
+    case MsgID::Type::LS:
+      struct LsCmd *ls;
+      ls->msgId = type;
+      strcpy(ls->dir, command.c_str());
+      ls->size = htonl(sizeof(int) +
+                       sizeof(ls->dir) +
+                       sizeof(ls->msgId));
+      return Send(ls);
+    case MsgID::Type::GET:
+      struct GetCmd *get;
+      get->msgId = type;
+      strcpy(get->fileName, command.c_str());
+      get->size = htonl(sizeof(int) +
+                        sizeof(get->fileName) +
+                        sizeof(get->msgId));
+      return Send(get);
+    case MsgID::Type::PUT:
+      struct PutCmd *put;
+      put->msgId = type;
+      strcpy(put->fileName, command.c_str());
+      put->size = htonl(sizeof(int) +
+                        sizeof(put->fileName) +
+                        sizeof(getFileSize(put->fileName)) +
+                        sizeof(put->msgId));
+      return Send(put);
+    case MsgID::Type::HELP:
+      return 1;
+    default:
+      return -1;
+  }
+}
+
+int Client::handleGetCmd()
+{
   return 0;
 }
 
-void Client::zeroBuffer()
+int Client::handleLsCmd()
 {
-  bzero(buffer, 256);
+  return 0;
+}
+
+int Client::handlePutCmd()
+{
+  return 0;
+}
+
+int Client::getFileSize(char *fileName)
+{
+  FILE *file = fopen(fileName, "r");
+  fseek(file, 0, SEEK_END);
+  return ftell(file);
+}
+
+
+void Client::zeroBuffer(char *buffer)
+{
+  bzero(buffer, sizeof(buffer));
 }

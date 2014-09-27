@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <netdb.h> 
 #include <netinet/in.h>
+#include "messages.h"
 
 class Client
 {
@@ -19,8 +20,8 @@ public:
   
   void Connect();
 
-  int Send(std::string);
-  int Receive();
+  int Send(struct Header*);
+  int Receive(int);
 
 private:
   int m_connectionSocket;
@@ -28,18 +29,20 @@ private:
   int m_send;
   int m_receive;
 
+  char *m_buffer;
+
   struct sockaddr_in m_serverAddress;
   struct hostent *m_server;
 
-  char buffer[256];
-
   int createSocket();
-  int sendCommand(std::string);
+  int getFileSize(char*);
+  int sendCommand(MsgID::Type, std::string);
+  int sendHeader(MsgID::Type, std::string);
+  int handleGetCmd();
+  int handleLsCmd();
+  int handlePutCmd();
 
-  void handleGetCmd();
-  void handleLsCmd();
-  void handlePutCmd();
-  void zeroBuffer();
+  void zeroBuffer(char*);
 };
 
 #endif

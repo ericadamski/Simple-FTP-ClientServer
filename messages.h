@@ -7,7 +7,8 @@ struct MsgID
   {
     LS,
     GET,
-    PUT
+    PUT,
+    HELP
   };
 
   static const char* toString(Type msgId)
@@ -15,7 +16,8 @@ struct MsgID
     static char const * const lookup[] = {
       "ls",
       "Get",
-      "Put"
+      "Put",
+      "Help"
     };
 
     return lookup[msgId];
@@ -44,19 +46,14 @@ struct PutCmd : Header
   int  fileSize;
 };
 
-struct LsCmdResponse
+struct HelpCmd : Header
 {
-  int lsSize; //number of bytes of ls cmd output
+  char helpMsg[256];
 };
 
-struct GetCmdResponse
+struct CmdResponse
 {
-  int getSize; //number of bytes of file requested, -1 if error
-};
-
-struct PutCmdResponse
-{
-  int result; //0 if success 1 otherwise
+  int size; //if put 0 is success fail otherwise
 };
 
 #endif
