@@ -51,9 +51,4 @@ struct HelpCmd : Header
   char helpMsg[256];
 };
 
-struct CmdResponse
-{
-  int size; //if put 0 is success fail otherwise
-};
-
 #endif

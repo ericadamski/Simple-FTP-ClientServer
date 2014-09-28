@@ -20,7 +20,7 @@ public:
   
   void Connect();
 
-  int Send(struct Header*);
+  int Send(struct Header);
   int Receive(int);
 
 private:
@@ -30,6 +30,8 @@ private:
   int m_receive;
 
   char *m_buffer;
+
+  struct Header m_currentMsg;
 
   struct sockaddr_in m_serverAddress;
   struct hostent *m_server;

@@ -23,18 +23,22 @@ class Server
     void error(const char*);
     void Listen();
     
-    int Send(struct CmdResponse*);
+    int Send(struct Header);
+    int Send();
     int Receive(int);
 
   private:
     const int PORT = 30000;
+    const char *LS_COMMAND = "/bin/ls";
+
+    char *m_buffer;
 
     struct sockaddr_in m_address;
     struct sockaddr_in m_clientAddress;
 
     socklen_t m_clientLength;
 
-    char *m_buffer;
+    struct Header m_currentMsg;
 
     int m_connectionSocket;
     int m_acceptSocket;

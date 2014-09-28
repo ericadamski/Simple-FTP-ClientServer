@@ -43,11 +43,27 @@ void Server::printHelp()
   //TODO
 }
 
-int Server::Send(struct CmdResponse *msg)
+int Server::Send(struct Header msg)
 {
-  m_send = send(m_acceptSocket, msg, sizeof(msg->size), 0);
+  m_send = send(m_acceptSocket, &msg, msg.size, 0);
   if( m_send < 0 )
   {
+    fprintf(stderr, "Message send failure.");
+    char buffer[256];
+    printf("%s",strerror_r(errno, buffer, 256));
+    return -1;
+  }
+  printf("Message sent. \n");
+  return m_send;
+}
+
+int Server::Send()
+{
+  m_send = send(m_acceptSocket, m_buffer, strlen(m_buffer) + 1, 0);
+  printf("%d", strlen(m_buffer));
+  if( m_send < 0 )
+  {
+    printf("%d", m_send);
     fprintf(stderr, "Message send failure.");
     return -1;
   }
@@ -57,15 +73,15 @@ int Server::Send(struct CmdResponse *msg)
 
 int Server::Receive(int size)
 {
-  char *buffer = (char *)malloc(size);
-  m_receive = recv(m_acceptSocket, buffer, size, 0);
+  m_receive = recv(m_acceptSocket, &m_currentMsg, size, 0);
+  int msgSize = ntohl(m_currentMsg.size) - sizeof(Header);
+  m_buffer = (char *)malloc(msgSize);
+  m_receive = recv(m_acceptSocket, m_buffer, msgSize, 0);
   if( m_receive < 0 )
   {
-    fprintf(stderr, "ERROR reading message.");
+    fprintf(stderr, "ERROR reading message. \n");
     return -1;
   }
-  m_buffer = (char *)malloc(sizeof(buffer));
-  m_buffer = buffer;
   return m_receive;
 }
 
@@ -89,6 +105,8 @@ void Server::Listen()
     {
       fprintf(stderr, "ERROR on accept.\n");
     }
+
+    sendResponse();
   }
   Close();
 }
@@ -102,20 +120,45 @@ int Server::getFileSize(char *fileName)
 
 int Server::sendResponse()
 {
-  Receive(256);
-  return 0;
+  //get header
+  Receive(sizeof(Header));
+  //handle command
+  switch(m_currentMsg.msgId)
+  {
+    case MsgID::Type::LS:
+      return handleLsCmd();
+    case MsgID::Type::GET:
+      return handleGetCmd();
+    case MsgID::Type::PUT:
+      return handlePutCmd();
+    case MsgID::Type::HELP:
+      printHelp();
+      return 0;
+    default:
+      return -1;
+  }
 }
 
 int Server::handleLsCmd()
 {
-
-  return 0;
+  FILE *lsProc = popen(LS_COMMAND, "r");
+  char buff[2024];
+  zeroBuffer(buff);
+  while(!feof(lsProc) && fgets(buff, sizeof(buff), lsProc));
+  m_buffer = (char *)malloc(strlen(buff));
+  strcpy(m_buffer, buff);
+  struct Header msg;
+  msg.msgId = MsgID::Type::LS;
+  msg.size = htonl(strlen(m_buffer));
+  Send(msg);
+  Send(msg);
+  return Send(msg);
+  //return Send();
 }
 
 int Server::handleGetCmd()
 {
   return 0;
-
 }
 
 int Server::handlePutCmd()
