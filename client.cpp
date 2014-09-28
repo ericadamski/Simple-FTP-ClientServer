@@ -28,7 +28,7 @@ void Client::Connect()
   else
   {
     printf("Type [quit] in order to close the connection.\n");
-    sendCommand(MsgID::Type::LS, ".");
+    sendCommand(MsgID::Type::LS, "HELLO!");
   }
   close(m_connectionSocket);
 }
@@ -42,7 +42,7 @@ int Client::createSocket()
 
 int Client::Send(struct Header msg)
 {
-  m_send = send(m_connectionSocket, &msg, msg.size, 0);
+  m_send = send(m_connectionSocket, &msg, ntohl(msg.size), 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -96,9 +96,8 @@ int Client::sendHeader(MsgID::Type type, std::string command)
       ls.msgId = type;
       zeroBuffer(ls.dir, 256);
       strcpy(ls.dir, command.c_str());
-      printf("Dir is %s \n", ls.dir);
       ls.size = htonl(sizeof(LsCmd));
-      return Send(ls);
+      return send(m_connectionSocket, &ls, ntohl(ls.size), 0);
     case MsgID::Type::GET:
       struct GetCmd get;
       get.msgId = type;
