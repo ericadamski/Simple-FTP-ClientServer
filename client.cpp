@@ -54,9 +54,10 @@ int Client::Send(struct Header msg)
 
 int Client::Receive(int size)
 {
-  m_receive = recv(m_connectionSocket, &m_currentMsg, size, 0);
+  m_receive = recv(m_connectionSocket, &m_currentMsg, sizeof(Header), 0);
   int msgSize = ntohl(m_currentMsg.size) - sizeof(Header);
   m_buffer = (char *)malloc(msgSize);
+  zeroBuffer(m_buffer, msgSize);
   m_receive = recv(m_connectionSocket, m_buffer, msgSize, 0);
   printf("%d",strlen(m_buffer));
   if( m_receive < 0 )
@@ -93,7 +94,9 @@ int Client::sendHeader(MsgID::Type type, std::string command)
     case MsgID::Type::LS:
       struct LsCmd ls;
       ls.msgId = type;
+      zeroBuffer(ls.dir, 256);
       strcpy(ls.dir, command.c_str());
+      printf("Dir is %s \n", ls.dir);
       ls.size = htonl(sizeof(LsCmd));
       return Send(ls);
     case MsgID::Type::GET:
@@ -139,7 +142,7 @@ int Client::getFileSize(char *fileName)
 }
 
 
-void Client::zeroBuffer(char *buffer)
+void Client::zeroBuffer(char *buffer, int size)
 {
-  bzero(buffer, sizeof(buffer));
+  bzero(buffer, size);
 }

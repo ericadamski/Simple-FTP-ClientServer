@@ -53,7 +53,7 @@ class Server
     int handleLsCmd();
     int handlePutCmd();
 
-    void zeroBuffer(char*);
+    void zeroBuffer(char*, int);
     void printHelp();
 };
 

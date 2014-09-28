@@ -45,7 +45,8 @@ void Server::printHelp()
 
 int Server::Send(struct Header msg)
 {
-  m_send = send(m_acceptSocket, &msg, msg.size, 0);
+  printf("Sending msg:{ msgId = %d, size = %d } with size %d.\n", msg.msgId, ntohl(msg.size), ntohl(msg.size));
+  m_send = send(m_acceptSocket, &msg, sizeof(Header), 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -59,8 +60,10 @@ int Server::Send(struct Header msg)
 
 int Server::Send()
 {
-  m_send = send(m_acceptSocket, m_buffer, strlen(m_buffer) + 1, 0);
-  printf("%d", strlen(m_buffer));
+  m_buffer[strlen(m_buffer)] = '\0';
+  printf("Sending msg:{ buffer = %s } with size %d.\n", m_buffer, strlen(m_buffer));
+  m_send = send(m_acceptSocket, m_buffer, strlen(m_buffer), 0);
+  printf("%s", m_buffer);
   if( m_send < 0 )
   {
     printf("%d", m_send);
@@ -74,9 +77,13 @@ int Server::Send()
 int Server::Receive(int size)
 {
   m_receive = recv(m_acceptSocket, &m_currentMsg, size, 0);
+  printf("Received msg : { msgId = %d, size = %d}\n", m_currentMsg.msgId, ntohl(m_currentMsg.size));
   int msgSize = ntohl(m_currentMsg.size) - sizeof(Header);
+  printf("Need to receive %d \n", msgSize);
   m_buffer = (char *)malloc(msgSize);
   m_receive = recv(m_acceptSocket, m_buffer, msgSize, 0);
+  printf("Received buffer : %s, with size %d \n", m_buffer, strlen(m_buffer));
+  printf("%s", m_buffer);
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR reading message. \n");
@@ -85,8 +92,8 @@ int Server::Receive(int size)
   return m_receive;
 }
 
-void Server::zeroBuffer(char *buffer)
-{ bzero(buffer, sizeof(buffer)); }
+void Server::zeroBuffer(char *buffer, int size)
+{ bzero(buffer, size); }
 
 void Server::Listen()
 {
@@ -107,6 +114,7 @@ void Server::Listen()
     }
 
     sendResponse();
+    sleep(100);
   }
   Close();
 }
@@ -143,17 +151,15 @@ int Server::handleLsCmd()
 {
   FILE *lsProc = popen(LS_COMMAND, "r");
   char buff[2024];
-  zeroBuffer(buff);
+  zeroBuffer(buff, 2024);
   while(!feof(lsProc) && fgets(buff, sizeof(buff), lsProc));
   m_buffer = (char *)malloc(strlen(buff));
   strcpy(m_buffer, buff);
   struct Header msg;
   msg.msgId = MsgID::Type::LS;
-  msg.size = htonl(strlen(m_buffer));
+  msg.size = htonl(strlen(m_buffer) + sizeof(Header));
   Send(msg);
-  Send(msg);
-  return Send(msg);
-  //return Send();
+  return Send();
 }
 
 int Server::handleGetCmd()
