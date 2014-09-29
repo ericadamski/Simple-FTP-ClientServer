@@ -40,13 +40,20 @@ void Server::Close()
 
 void Server::printHelp()
 {
-  std::string help = "[1] ls [dir] \n[2] get [filename] \n[3] put [filename] \n[4] help \n[0] Quit\n";
-  Send((void *)help.c_str(), strlen(help.c_str()));
+  HelpCmd msg;
+  msg.msgId = MsgID::Type::HELP;
+  std::string help = "Options: \n\t[1] ls [dir] \n\t[2] get [filename] \n\t[3] put [filename] \n\t[4] help \n\t[0] Quit\n";
+  strcpy(msg.helpMsg, help.c_str());
+  msg.size = sizeof(HelpCmd);
+  Send(&msg, msg.size, Server::MsgType::MSG);
 }
 
-int Server::Send(void *msg, int size)
+int Server::Send(void *msg, int size, Server::MsgType flags)
 {
-  m_send = send(m_acceptSocket, msg, size, 0);
+  if( flags == Server::MsgType::MSG )
+    m_send = send(m_acceptSocket, networkize(msg), size, 0);
+  else
+    m_send = send(m_acceptSocket, msg, size, 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -58,7 +65,7 @@ int Server::Send(void *msg, int size)
 int Server::Receive(int size)
 {
   m_receive = recv(m_acceptSocket, &m_currentMsg, size, 0);
-  int msgSize = ntohl(m_currentMsg.size) - sizeof(Header);
+  int msgSize = hostize(m_currentMsg).size - sizeof(Header);
   m_buffer = (char *)malloc(msgSize);
   m_receive = recv(m_acceptSocket, m_buffer, msgSize, 0);
   if( m_receive < 0 )
@@ -81,7 +88,7 @@ void Server::Listen()
   else
   {
     listen(m_connectionSocket, 5);
-    printf("Server is now listening on port %d.\n Type [quit] to shutdown server.\n", m_port);
+    printf("Server is now listening on port %d.\n", m_port);
     m_clientLength = sizeof(m_clientAddress);
     m_acceptSocket = accept(m_connectionSocket,
                             (struct sockaddr *) &m_clientAddress, &m_clientLength);
@@ -89,7 +96,6 @@ void Server::Listen()
     {
       fprintf(stderr, "ERROR on accept.\n");
     }
-    printHelp();
     while(sendResponse() >= 0);
   }
   Close();
@@ -128,9 +134,9 @@ int Server::handleLsCmd()
   strcpy(m_buffer, cmd.c_str());
   struct Header msg;
   msg.msgId = MsgID::Type::LS;
-  msg.size = htonl(strlen(m_buffer) + sizeof(Header));
-  Send(&msg, ntohl(msg.size));
-  return Send(m_buffer, strlen(m_buffer));
+  msg.size = strlen(m_buffer) + sizeof(Header);
+  Send(&msg, msg.size, Server::MsgType::MSG);
+  return Send(m_buffer, strlen(m_buffer), Server::MsgType::STRING);
 }
 
 int Server::handleGetCmd()
@@ -161,3 +167,15 @@ std::string Server::GetStdoutFromCommand(std::string cmd)
   return data;
 }
 
+void *Server::networkize(void *msg)
+{
+  Header *tmpH = (Header *)msg;
+  tmpH->size = htonl(tmpH->size);
+  return msg;
+}
+
+Header Server::hostize(Header msg)
+{
+  msg.size = ntohl(msg.size);
+  return msg;
+}

@@ -43,8 +43,12 @@ private:
   int handleGetCmd();
   int handleLsCmd();
   int handlePutCmd();
+  int handleHelpCmd();
 
   void zeroBuffer(char*, int size);
+  void *networkize(void*);
+ 
+  Header hostize(Header);
 };
 
 #endif

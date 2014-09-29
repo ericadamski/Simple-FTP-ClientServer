@@ -15,6 +15,14 @@
 class Server
 {
   public:
+
+    enum MsgType
+    {
+      MSG,
+      STRING,
+      OTHER
+    };
+
     Server();
     Server(std::string);
     ~Server();
@@ -23,8 +31,7 @@ class Server
     void error(const char*);
     void Listen();
     
-    int Send(void*, int);
-    int Send();
+    int Send(void*, int, MsgType);
     int Receive(int);
 
   private:
@@ -55,6 +62,10 @@ class Server
 
     void zeroBuffer(char*, int);
     void printHelp();
+
+    void *networkize(void*);
+    
+    Header hostize(Header);
 
     std::string GetStdoutFromCommand(std::string);
 };
