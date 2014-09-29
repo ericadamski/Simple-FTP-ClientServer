@@ -28,7 +28,7 @@ void Client::Connect()
   else
   {
     printf("Type [quit] in order to close the connection.\n");
-    sendCommand(MsgID::Type::LS, "HELLO!");
+    sendCommand(MsgID::Type::LS, ".");
   }
   close(m_connectionSocket);
 }
@@ -40,9 +40,9 @@ int Client::createSocket()
   return m_connectionSocket;
 }
 
-int Client::Send(struct Header msg)
+int Client::Send(void *msg, int size)
 {
-  m_send = send(m_connectionSocket, &msg, ntohl(msg.size), 0);
+  m_send = send(m_connectionSocket, msg, size, 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -97,19 +97,19 @@ int Client::sendHeader(MsgID::Type type, std::string command)
       zeroBuffer(ls.dir, 256);
       strcpy(ls.dir, command.c_str());
       ls.size = htonl(sizeof(LsCmd));
-      return send(m_connectionSocket, &ls, ntohl(ls.size), 0);
+      return Send(&ls, ntohl(ls.size));
     case MsgID::Type::GET:
       struct GetCmd get;
       get.msgId = type;
       strcpy(get.fileName, command.c_str());
       get.size = htonl(sizeof(GetCmd));
-      return Send(get);
+      return Send(&get, ntohl(get.size));
     case MsgID::Type::PUT:
       struct PutCmd put;
       put.msgId = type;
       strcpy(put.fileName, command.c_str());
       put.size = htonl(sizeof(PutCmd));
-      return Send(put);
+      return Send(&put, ntohl(put.size));
     case MsgID::Type::HELP:
       return 1;
     default:

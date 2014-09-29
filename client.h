@@ -20,7 +20,7 @@ public:
   
   void Connect();
 
-  int Send(struct Header);
+  int Send(void*, int);
   int Receive(int);
 
 private:

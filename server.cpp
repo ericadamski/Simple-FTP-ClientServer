@@ -40,50 +40,27 @@ void Server::Close()
 
 void Server::printHelp()
 {
-  //TODO
+  std::string help = "[1] ls [dir] \n[2] get [filename] \n[3] put [filename] \n[4] help \n[0] Quit\n";
+  Send((void *)help.c_str(), strlen(help.c_str()));
 }
 
-int Server::Send(struct Header msg)
+int Server::Send(void *msg, int size)
 {
-  printf("Sending msg:{ msgId = %d, size = %d } with size %d.\n", msg.msgId, ntohl(msg.size), ntohl(msg.size));
-  m_send = send(m_acceptSocket, &msg, sizeof(Header), 0);
+  m_send = send(m_acceptSocket, msg, size, 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
-    char buffer[256];
-    printf("%s",strerror_r(errno, buffer, 256));
     return -1;
   }
-  printf("Message sent. \n");
-  return m_send;
-}
-
-int Server::Send()
-{
-  m_buffer[strlen(m_buffer)] = '\0';
-  printf("Sending msg:{ buffer = %s } with size %d.\n", m_buffer, strlen(m_buffer));
-  m_send = send(m_acceptSocket, m_buffer, strlen(m_buffer), 0);
-  printf("%s", m_buffer);
-  if( m_send < 0 )
-  {
-    printf("%d", m_send);
-    fprintf(stderr, "Message send failure.");
-    return -1;
-  }
-  printf("Message sent. \n");
   return m_send;
 }
 
 int Server::Receive(int size)
 {
   m_receive = recv(m_acceptSocket, &m_currentMsg, size, 0);
-  printf("Received msg : { msgId = %d, size = %d}\n", m_currentMsg.msgId, ntohl(m_currentMsg.size));
   int msgSize = ntohl(m_currentMsg.size) - sizeof(Header);
-  printf("Need to receive %d \n", msgSize);
   m_buffer = (char *)malloc(msgSize);
   m_receive = recv(m_acceptSocket, m_buffer, msgSize, 0);
-  printf("Received buffer : %s, with size %d \n", m_buffer, strlen(m_buffer));
-  printf("%s", m_buffer);
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR reading message. \n");
@@ -112,9 +89,8 @@ void Server::Listen()
     {
       fprintf(stderr, "ERROR on accept.\n");
     }
-
-    sendResponse();
-    sleep(100);
+    printHelp();
+    while(sendResponse() >= 0);
   }
   Close();
 }
@@ -128,9 +104,7 @@ int Server::getFileSize(char *fileName)
 
 int Server::sendResponse()
 {
-  //get header
   Receive(sizeof(Header));
-  //handle command
   switch(m_currentMsg.msgId)
   {
     case MsgID::Type::LS:
@@ -149,17 +123,14 @@ int Server::sendResponse()
 
 int Server::handleLsCmd()
 {
-  FILE *lsProc = popen(LS_COMMAND, "r");
-  char buff[2024];
-  zeroBuffer(buff, 2024);
-  while(!feof(lsProc) && fgets(buff, sizeof(buff), lsProc));
-  m_buffer = (char *)malloc(strlen(buff));
-  strcpy(m_buffer, buff);
+  std::string cmd = GetStdoutFromCommand(LS_COMMAND.append(" ").append(m_buffer));
+  m_buffer = (char *)malloc(strlen(cmd.c_str()));
+  strcpy(m_buffer, cmd.c_str());
   struct Header msg;
   msg.msgId = MsgID::Type::LS;
   msg.size = htonl(strlen(m_buffer) + sizeof(Header));
-  Send(msg);
-  return Send();
+  Send(&msg, ntohl(msg.size));
+  return Send(m_buffer, strlen(m_buffer));
 }
 
 int Server::handleGetCmd()
@@ -171,3 +142,22 @@ int Server::handlePutCmd()
 {
   return 0;
 }
+
+std::string Server::GetStdoutFromCommand(std::string cmd)
+{
+  std::string data;
+  FILE * stream;
+  const int max_buffer = 256;
+  char buffer[max_buffer];
+  cmd.append(" 2>&1");
+
+  stream = popen(cmd.c_str(), "r");
+  if (stream)
+  {
+    while (!feof(stream))
+      if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
+        pclose(stream);
+  }
+  return data;
+}
+

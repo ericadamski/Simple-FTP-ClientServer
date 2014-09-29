@@ -23,13 +23,13 @@ class Server
     void error(const char*);
     void Listen();
     
-    int Send(struct Header);
+    int Send(void*, int);
     int Send();
     int Receive(int);
 
   private:
     const int PORT = 30000;
-    const char *LS_COMMAND = "/bin/ls";
+    std::string LS_COMMAND = "/bin/ls";
 
     char *m_buffer;
 
@@ -55,6 +55,8 @@ class Server
 
     void zeroBuffer(char*, int);
     void printHelp();
+
+    std::string GetStdoutFromCommand(std::string);
 };
 
 #endif
