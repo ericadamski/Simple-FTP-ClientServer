@@ -31,13 +31,16 @@ private:
 
   char *m_buffer;
 
+  std::string m_data;
+
   struct Header m_currentMsg;
 
   struct sockaddr_in m_serverAddress;
   struct hostent *m_server;
 
+  int ReceiveHeader(); //receive only the header and return the length of the data.
+  int ReceiveData(int);
   int createSocket();
-  int getFileSize(char*);
   int sendCommand(MsgID::Type, std::string);
   int sendHeader(MsgID::Type, std::string);
   int handleGetCmd();
@@ -46,6 +49,7 @@ private:
   int handleHelpCmd();
 
   void zeroBuffer(char*, int size);
+  void printBuffer();
   void *networkize(void*);
  
   Header hostize(Header);

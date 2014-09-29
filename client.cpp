@@ -27,7 +27,7 @@ void Client::Connect()
     fprintf(stderr, "ERROR connecting to server.\n");
   else
   {
-    printf("Type [quit] in order to close the connection.\n");
+    printf("Type the number to execute command [#].\n");
     std::string line;
     while(sendCommand(MsgID::Type::HELP, ""),
           printf("> "),
@@ -64,11 +64,13 @@ void Client::Connect()
             break;
           case 4:
             //help
+            fflush(stdin);
+            line = '\0';
             sendCommand(MsgID::Type::HELP, "");
             break;
           case 0:
-            line = "quit";
-            break;
+            sendCommand(MsgID::Type::QUIT, "");
+            return;
         }
       }
     }
@@ -97,23 +99,50 @@ int Client::Send(void *msg, int size)
 
 int Client::Receive(int size)
 {
+  return ReceiveHeader();
+}
+
+int Client::ReceiveHeader()
+{
   m_receive = recv(m_connectionSocket, &m_currentMsg, sizeof(Header), 0);
-  int msgSize = hostize(m_currentMsg).size - sizeof(Header);
-  m_buffer = (char *)malloc(msgSize);
-  zeroBuffer(m_buffer, msgSize);
-  m_receive = recv(m_connectionSocket, m_buffer, msgSize, 0);
+  printf("Received %d bytes.", m_receive); //should always be 8
   if( m_receive < 0 )
   {
     fprintf(stderr, "ERROR receiving message.");
     return -1;
   }
-  return m_receive;
+  return ReceiveData(hostize(m_currentMsg).size - sizeof(Header));
+}
+
+int Client::ReceiveData(int size)
+{
+  int bytesToReceive = size;
+
+  printf("Need to receive %d bytes.", size);
+  m_buffer = (char *)malloc(MAX_BYTES);
+  m_data = "";
+  while( bytesToReceive > 0 )
+  {
+    zeroBuffer(m_buffer, MAX_BYTES);
+    m_receive = recv(m_connectionSocket, m_buffer, MAX_BYTES, 0);
+    printf("Received %d bytes.", m_receive);
+    if( m_receive < 0 )
+    {
+      fprintf(stderr, "ERROR receiving message.");
+      return -1;
+    }
+    m_data.append(m_buffer);
+    bytesToReceive -= m_receive;
+  }
+
+  return size;
 }
 
 int Client::sendCommand(MsgID::Type type, std::string command)
 {
   sendHeader(type, command);
-  Receive(sizeof(Header));
+  if(type != MsgID::Type::QUIT)
+    Receive(sizeof(Header));
   switch(type)
   {
     case MsgID::Type::LS:
@@ -124,6 +153,8 @@ int Client::sendCommand(MsgID::Type type, std::string command)
       return handlePutCmd();
     case MsgID::Type::HELP:
       return handleHelpCmd();
+    case MsgID::Type::QUIT:
+      return 0;
     default:
       return -1;
   }
@@ -136,7 +167,6 @@ int Client::sendHeader(MsgID::Type type, std::string command)
     case MsgID::Type::LS:
       struct LsCmd ls;
       ls.msgId = type;
-      zeroBuffer(ls.dir, 256);
       strcpy(ls.dir, command.c_str());
       ls.size = sizeof(LsCmd);
       return Send(&ls, ls.size);
@@ -157,6 +187,11 @@ int Client::sendHeader(MsgID::Type type, std::string command)
       help.msgId = type;
       help.size = sizeof(HelpCmd);
       return Send(&help, help.size);
+    case MsgID::Type::QUIT:
+      struct Header quit;
+      quit.msgId = type;
+      quit.size = sizeof(Header);
+      return Send(&quit, quit.size);
     default:
       return -1;
   }
@@ -164,13 +199,13 @@ int Client::sendHeader(MsgID::Type type, std::string command)
 
 int Client::handleGetCmd()
 {
+  printBuffer();
   return 0;
 }
 
 int Client::handleLsCmd()
 {
-  printf("%s\n", m_buffer); 
-  free(m_buffer);
+  printBuffer();
   return 0;
 }
 
@@ -181,21 +216,22 @@ int Client::handlePutCmd()
 
 int Client::handleHelpCmd()
 {
-  printf("%s\n", m_buffer);
-  free(m_buffer);
+  printBuffer();
   return 0;
 }
 
-int Client::getFileSize(char *fileName)
+void Client::printBuffer()
 {
-  FILE *file = fopen(fileName, "r");
-  fseek(file, 0, SEEK_END);
-  return ftell(file);
+  printf("Printing and freeing buffer\n");
+  printf("%s\n", m_buffer);
+  zeroBuffer(m_buffer, strlen(m_buffer));
+  free(m_buffer);
 }
 
 void Client::zeroBuffer(char *buffer, int size)
 {
-  bzero(buffer, size);
+  for(int i = 0; i < size; i++)
+    buffer[i] = '\0';
 }
 
 void *Client::networkize(void *msg)

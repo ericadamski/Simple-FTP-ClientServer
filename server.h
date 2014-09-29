@@ -54,7 +54,6 @@ class Server
     int m_port;
 
     int createSocket();
-    int getFileSize(char*);
     int sendResponse();
     int handleGetCmd();
     int handleLsCmd();

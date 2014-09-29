@@ -1,4 +1,5 @@
 #include "server.h"
+#include "file_utils.h"
 
 Server::Server()
 {
@@ -17,7 +18,10 @@ Server::Server(std::string port)
     htons((m_port = atoi(port.c_str())));
 }
 
-Server::~Server(){}
+Server::~Server()
+{
+  free(m_buffer);
+}
 
 void Server::error(const char* message)
 {
@@ -40,6 +44,7 @@ void Server::Close()
 
 void Server::printHelp()
 {
+  free(m_buffer);
   HelpCmd msg;
   msg.msgId = MsgID::Type::HELP;
   std::string help = "Options: \n\t[1] ls [dir] \n\t[2] get [filename] \n\t[3] put [filename] \n\t[4] help \n\t[0] Quit\n";
@@ -51,7 +56,9 @@ void Server::printHelp()
 int Server::Send(void *msg, int size, Server::MsgType flags)
 {
   if( flags == Server::MsgType::MSG )
+  {
     m_send = send(m_acceptSocket, networkize(msg), size, 0);
+  }
   else
     m_send = send(m_acceptSocket, msg, size, 0);
   if( m_send < 0 )
@@ -101,13 +108,6 @@ void Server::Listen()
   Close();
 }
 
-int Server::getFileSize(char *fileName)
-{
-  FILE *file = fopen(fileName, "r");
-  fseek(file, 0, SEEK_END);
-  return ftell(file);
-} 
-
 int Server::sendResponse()
 {
   Receive(sizeof(Header));
@@ -122,6 +122,8 @@ int Server::sendResponse()
     case MsgID::Type::HELP:
       printHelp();
       return 0;
+    case MsgID::Type::QUIT:
+      return -2;
     default:
       return -1;
   }
@@ -130,18 +132,44 @@ int Server::sendResponse()
 int Server::handleLsCmd()
 {
   std::string cmd = GetStdoutFromCommand(LS_COMMAND.append(" ").append(m_buffer));
-  m_buffer = (char *)malloc(strlen(cmd.c_str()));
-  strcpy(m_buffer, cmd.c_str());
-  struct Header msg;
+  struct LsCmd msg;
   msg.msgId = MsgID::Type::LS;
-  msg.size = strlen(m_buffer) + sizeof(Header);
+  msg.size = sizeof(LsCmd);
+  strcpy(msg.dir, cmd.c_str());
   Send(&msg, msg.size, Server::MsgType::MSG);
-  return Send(m_buffer, strlen(m_buffer), Server::MsgType::STRING);
+  return m_send;
 }
 
 int Server::handleGetCmd()
 {
-  return 0;
+  struct GetCmd msg;
+  msg.msgId = MsgID::Type::GET;
+  std::string file = FileUtils::getFile(m_buffer);
+  std::string substring = "";
+  int total = file.length();
+  if(total > 1024)
+    msg.size = sizeof(GetCmd) + file.length() - 1024;
+  else
+    msg.size = sizeof(GetCmd);
+  int begin = 0;
+  int end = MAX_BYTES;
+  while(!(substring = file.substr(begin, end)).empty() &&
+        !(end == total))
+  { 
+    begin = end + 1;
+    if( end + MAX_BYTES < total )
+      end = end + MAX_BYTES;
+    else
+      end = total;
+    if( end == 2*MAX_BYTES )
+    {
+      strcpy(msg.file, substring.c_str());
+      Send(&msg, msg.size, Server::MsgType::MSG);
+    }
+    else
+      Send(&substring, substring.length(), Server::MsgType::STRING);
+  } 
+  return m_send;
 }
 
 int Server::handlePutCmd()
@@ -151,18 +179,18 @@ int Server::handlePutCmd()
 
 std::string Server::GetStdoutFromCommand(std::string cmd)
 {
-  std::string data;
+  std::string data = "";
   FILE * stream;
   const int max_buffer = 256;
   char buffer[max_buffer];
-  cmd.append(" 2>&1");
-
-  stream = popen(cmd.c_str(), "r");
+  
+  system(cmd.append(" > .lsoutput").c_str());
+  stream = fopen(".lsoutput", "r");
   if (stream)
   {
     while (!feof(stream))
       if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
-        pclose(stream);
+    fclose(stream);
   }
   return data;
 }

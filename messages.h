@@ -1,6 +1,8 @@
 #ifndef MESSAGES
 #define MESSAGES
 
+#define MAX_BYTES 1024
+
 struct MsgID
 {
   enum Type
@@ -8,7 +10,8 @@ struct MsgID
     LS,
     GET,
     PUT,
-    HELP
+    HELP,
+    QUIT
   };
 
   static const char* toString(Type msgId)
@@ -17,7 +20,8 @@ struct MsgID
       "ls",
       "Get",
       "Put",
-      "Help"
+      "Help",
+      "Quit"
     };
 
     return lookup[msgId];
@@ -32,23 +36,24 @@ struct Header
 
 struct LsCmd : Header
 {
-  char dir[256];
+  char dir[MAX_BYTES];
 };
 
 struct GetCmd : Header
 {
-  char fileName[256];
+  char fileName[MAX_BYTES];
+  char file[MAX_BYTES];
 };
 
 struct PutCmd : Header
 {
-  char fileName[256];
-  int  fileSize;
+  char fileName[MAX_BYTES];
+  char file[MAX_BYTES];
 };
 
 struct HelpCmd : Header
 {
-  char helpMsg[256];
+  char helpMsg[MAX_BYTES];
 };
 
 #endif
