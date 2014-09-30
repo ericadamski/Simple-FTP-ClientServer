@@ -11,7 +11,7 @@ std::string FileUtils::getFile(const char *name)
   if( file.is_open() )
   {
     char c;
-    while(file.get(c) != NULL)
+    while(file.get(c))
       data.append(1, c);
     file.close();
   }
