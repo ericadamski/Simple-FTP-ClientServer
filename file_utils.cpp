@@ -5,22 +5,24 @@
 
 std::string FileUtils::getFile(char *name)
 {
-  std::string line = "",
-              data = "";
+  std::string data = "";
   std::ifstream file (name);
   if( file.is_open() )
   {
-    while(std::getline(file, line))
-      data.append(line);
+    char c;
+    while(file.get(c) != NULL)
+      data.append(1, c);
     file.close();
   }
 
   return data;
 }
 
-void FileUtils::putFile(FILE *file)
+void FileUtils::putFile(char *filename, const char *data)
 {
-
+  std::ofstream file (filename);
+  file << data;
+  file.close();
 }
 
 int FileUtils::getFileSize(char *name)

@@ -66,6 +66,7 @@ int Server::Send(void *msg, int size, Server::MsgType flags)
     fprintf(stderr, "Message send failure.");
     return -1;
   }
+  printf("I sent %d bytes \n.", m_send);
   return m_send;
 }
 
@@ -142,32 +143,23 @@ int Server::handleLsCmd()
 
 int Server::handleGetCmd()
 {
-  struct GetCmd msg;
+  struct Header msg;
   msg.msgId = MsgID::Type::GET;
   std::string file = FileUtils::getFile(m_buffer);
   std::string substring = "";
   int total = file.length();
-  if(total > 1024)
-    msg.size = sizeof(GetCmd) + file.length() - 1024;
-  else
-    msg.size = sizeof(GetCmd);
-  int begin = 0;
-  int end = MAX_BYTES;
-  while(!(substring = file.substr(begin, end)).empty() &&
+  msg.size = sizeof(Header) + total;
+  Send(&msg, sizeof(Header), Server::MsgType::MSG);
+  int end = 0;
+  while(!(substring = file.substr(end, MAX_BYTES)).empty() &&
         !(end == total))
   { 
-    begin = end + 1;
     if( end + MAX_BYTES < total )
-      end = end + MAX_BYTES;
+      end += MAX_BYTES;
     else
       end = total;
-    if( end == 2*MAX_BYTES )
-    {
-      strcpy(msg.file, substring.c_str());
-      Send(&msg, msg.size, Server::MsgType::MSG);
-    }
-    else
-      Send(&substring, substring.length(), Server::MsgType::STRING);
+    Send((void *)substring.c_str(), substring.length(), Server::MsgType::STRING);
+    substring = "";
   } 
   return m_send;
 }

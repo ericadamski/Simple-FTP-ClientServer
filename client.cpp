@@ -199,7 +199,8 @@ int Client::sendHeader(MsgID::Type type, std::string command)
 
 int Client::handleGetCmd()
 {
-  printBuffer();
+  //printf("%s\n", m_data.c_str());
+  FileUtils::putFile("Dodads.cpp", m_data.c_str());
   return 0;
 }
 

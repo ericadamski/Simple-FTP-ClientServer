@@ -8,7 +8,7 @@ class FileUtils
 {
 public:
   static std::string getFile(char*);
-  static void putFile(FILE*);
+  static void putFile(char*, const char*);
   static int getFileSize(char*);
 };
 

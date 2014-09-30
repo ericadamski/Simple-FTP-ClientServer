@@ -11,6 +11,7 @@
 #include <netdb.h> 
 #include <netinet/in.h>
 #include "messages.h"
+#include "file_utils.h"
 
 class Client
 {
