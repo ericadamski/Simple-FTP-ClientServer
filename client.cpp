@@ -93,6 +93,7 @@ int Client::Send(void *msg, int size, Client::MsgType flags)
     m_send = send(m_connectionSocket, networkize(msg), size, 0);
   else
     m_send = send(m_connectionSocket, msg, size, 0);
+  sleep(1);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -146,18 +147,18 @@ int Client::ReceiveData(int size)
 int Client::sendCommand(MsgID::Type type, std::string command)
 {
   sendHeader(type, command);
-  if(type != MsgID::Type::QUIT &&
-     type != MsgID::Type::PUT)
-    Receive();
   switch(type)
   {
     case MsgID::Type::LS:
+      Receive();
       return handleLsCmd();
     case MsgID::Type::GET:
+      Receive();
       return handleGetCmd();
     case MsgID::Type::PUT:
       return handlePutCmd();
     case MsgID::Type::HELP:
+      Receive();
       return handleHelpCmd();
     case MsgID::Type::QUIT:
       return 0;

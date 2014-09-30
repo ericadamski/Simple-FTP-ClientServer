@@ -15,10 +15,6 @@ std::string FileUtils::getFile(const char *name)
       data.append(1, c);
     file.close();
   }
-  else
-  {
-    data = "Cannot access file. \n";
-  }
 
   return data;
 }
