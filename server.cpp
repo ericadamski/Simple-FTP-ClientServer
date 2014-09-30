@@ -197,10 +197,14 @@ int Server::handlePutCmd()
   {
     FileUtils::putFile(m_fileName.c_str(), m_data.c_str());
     m_fileName = "";
+    return 0;
   }
   else
+  {
     m_fileName = m_data;
-  return 0;
+    Receive();
+    return handlePutCmd();
+  }
 }
 
 std::string Server::GetStdoutFromCommand(std::string cmd)
