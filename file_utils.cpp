@@ -1,9 +1,10 @@
 #include "file_utils.h"
 #include <iostream>
+#include <string>
 #include <stdio.h>
 #include <fstream>
 
-std::string FileUtils::getFile(char *name)
+std::string FileUtils::getFile(const char *name)
 {
   std::string data = "";
   std::ifstream file (name);
@@ -14,13 +15,20 @@ std::string FileUtils::getFile(char *name)
       data.append(1, c);
     file.close();
   }
+  else
+  {
+    data = "Cannot access file. \n";
+  }
 
   return data;
 }
 
-void FileUtils::putFile(char *filename, const char *data)
+void FileUtils::putFile(const char *filename, const char *data)
 {
-  std::ofstream file (filename);
+  std::string sfile (filename);
+  unsigned int local = sfile.find_last_of("/\\");
+  sfile = sfile.substr(local + 1);
+  std::ofstream file (sfile);
   file << data;
   file.close();
 }

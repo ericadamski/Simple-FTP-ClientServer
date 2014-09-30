@@ -32,11 +32,14 @@ class Server
     void Listen();
     
     int Send(void*, int, MsgType);
-    int Receive(int);
+    int Receive();
 
   private:
     const int PORT = 30000;
     std::string LS_COMMAND = "/bin/ls";
+
+    std::string m_data;
+    std::string m_fileName;
 
     char *m_buffer;
 
@@ -47,6 +50,8 @@ class Server
 
     struct Header m_currentMsg;
 
+    int ReceiveHeader();
+    int ReceiveData(int);
     int m_connectionSocket;
     int m_acceptSocket;
     int m_send;

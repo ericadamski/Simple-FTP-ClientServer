@@ -52,6 +52,7 @@ void Client::Connect()
             line = '\0';
             printf("Please enter the name of the file you wish to GET. \n");
             while( printf("> "), std::getline(std::cin, line), line.empty() );
+            m_fileName = line;
             sendCommand(MsgID::Type::GET, line);
             break;
           case 3:
@@ -60,6 +61,7 @@ void Client::Connect()
             line = '\0';
             printf("Please enter the name of the file you wish to PUT. \n");
             while( printf("> "), std::getline(std::cin, line), line.empty() );
+            m_fileName = line;
             sendCommand(MsgID::Type::PUT, line);
             break;
           case 4:
@@ -85,9 +87,12 @@ int Client::createSocket()
   return m_connectionSocket;
 }
 
-int Client::Send(void *msg, int size)
+int Client::Send(void *msg, int size, Client::MsgType flags)
 {
-  m_send = send(m_connectionSocket, networkize(msg), size, 0);
+  if(flags == Client::MsgType::MSG)
+    m_send = send(m_connectionSocket, networkize(msg), size, 0);
+  else
+    m_send = send(m_connectionSocket, msg, size, 0);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -97,7 +102,7 @@ int Client::Send(void *msg, int size)
   return m_send;
 }
 
-int Client::Receive(int size)
+int Client::Receive()
 {
   return ReceiveHeader();
 }
@@ -141,8 +146,9 @@ int Client::ReceiveData(int size)
 int Client::sendCommand(MsgID::Type type, std::string command)
 {
   sendHeader(type, command);
-  if(type != MsgID::Type::QUIT)
-    Receive(sizeof(Header));
+  if(type != MsgID::Type::QUIT &&
+     type != MsgID::Type::PUT)
+    Receive();
   switch(type)
   {
     case MsgID::Type::LS:
@@ -169,29 +175,29 @@ int Client::sendHeader(MsgID::Type type, std::string command)
       ls.msgId = type;
       strcpy(ls.dir, command.c_str());
       ls.size = sizeof(LsCmd);
-      return Send(&ls, ls.size);
+      return Send(&ls, ls.size, MsgType::MSG);
     case MsgID::Type::GET:
       struct GetCmd get;
       get.msgId = type;
       strcpy(get.fileName, command.c_str());
       get.size = sizeof(GetCmd);
-      return Send(&get, get.size);
+      return Send(&get, get.size, MsgType::MSG);
     case MsgID::Type::PUT:
       struct PutCmd put;
       put.msgId = type;
       strcpy(put.fileName, command.c_str());
       put.size = sizeof(PutCmd);
-      return Send(&put, put.size);
+      return Send(&put, put.size, MsgType::MSG);
     case MsgID::Type::HELP:
       struct HelpCmd help;
       help.msgId = type;
       help.size = sizeof(HelpCmd);
-      return Send(&help, help.size);
+      return Send(&help, help.size, MsgType::MSG);
     case MsgID::Type::QUIT:
       struct Header quit;
       quit.msgId = type;
       quit.size = sizeof(Header);
-      return Send(&quit, quit.size);
+      return Send(&quit, quit.size, MsgType::MSG);
     default:
       return -1;
   }
@@ -199,8 +205,7 @@ int Client::sendHeader(MsgID::Type type, std::string command)
 
 int Client::handleGetCmd()
 {
-  //printf("%s\n", m_data.c_str());
-  FileUtils::putFile("Dodads.cpp", m_data.c_str());
+  FileUtils::putFile(m_fileName.c_str(), m_data.c_str());
   return 0;
 }
 
@@ -212,7 +217,25 @@ int Client::handleLsCmd()
 
 int Client::handlePutCmd()
 {
-  return 0;
+  struct Header msg;
+  msg.msgId = MsgID::Type::PUT;
+  std::string file = FileUtils::getFile(m_fileName.c_str());
+  std::string substring = "";
+  int total = file.length();
+  msg.size = sizeof(Header) + total;
+  Send(&msg, sizeof(Header), MsgType::MSG);
+  int end = 0;
+  while(!(substring = file.substr(end, MAX_BYTES)).empty() &&
+        !(end == total))
+  {
+    if( end + MAX_BYTES < total )
+      end += MAX_BYTES;
+    else
+      end = total;
+    Send((void *)substring.c_str(), substring.length(), MsgType::STRING);
+    substring = "";
+  }
+  return m_send;
 }
 
 int Client::handleHelpCmd()

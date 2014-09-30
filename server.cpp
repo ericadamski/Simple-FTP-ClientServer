@@ -11,6 +11,10 @@ Server::Server()
 
 Server::Server(std::string port)
 {
+  if(port.empty())
+    return;
+
+  m_fileName = "";
   bzero((char *) &m_address, sizeof(m_address));
   m_address.sin_family = AF_INET;
   m_address.sin_addr.s_addr = INADDR_ANY;
@@ -56,9 +60,7 @@ void Server::printHelp()
 int Server::Send(void *msg, int size, Server::MsgType flags)
 {
   if( flags == Server::MsgType::MSG )
-  {
     m_send = send(m_acceptSocket, networkize(msg), size, 0);
-  }
   else
     m_send = send(m_acceptSocket, msg, size, 0);
   if( m_send < 0 )
@@ -70,18 +72,43 @@ int Server::Send(void *msg, int size, Server::MsgType flags)
   return m_send;
 }
 
-int Server::Receive(int size)
+int Server::Receive()
 {
-  m_receive = recv(m_acceptSocket, &m_currentMsg, size, 0);
-  int msgSize = hostize(m_currentMsg).size - sizeof(Header);
-  m_buffer = (char *)malloc(msgSize);
-  m_receive = recv(m_acceptSocket, m_buffer, msgSize, 0);
+  return ReceiveHeader();
+}
+
+int Server::ReceiveHeader()
+{
+  m_receive = recv(m_acceptSocket, &m_currentMsg, sizeof(Header), 0);
   if( m_receive < 0 )
   {
-    fprintf(stderr, "ERROR reading message. \n");
+    fprintf(stderr, "ERROR receiving message.");
     return -1;
   }
-  return m_receive;
+  return ReceiveData(hostize(m_currentMsg).size - sizeof(Header));
+}
+
+int Server::ReceiveData(int size)
+{
+  int bytesToReceive = size;
+
+  m_buffer = (char *)malloc(MAX_BYTES);
+  m_data = "";
+
+  while( bytesToReceive > 0 )
+  {
+    zeroBuffer(m_buffer, MAX_BYTES);
+    m_receive = recv(m_acceptSocket, m_buffer, MAX_BYTES, 0);
+    if( m_receive < 0 )
+    {
+      fprintf(stderr, "ERROR reading message. \n");
+      return -1;
+    }
+    m_data.append(m_buffer);
+    bytesToReceive -= m_receive;
+  }
+
+  return size;
 }
 
 void Server::zeroBuffer(char *buffer, int size)
@@ -111,7 +138,7 @@ void Server::Listen()
 
 int Server::sendResponse()
 {
-  Receive(sizeof(Header));
+  Receive();
   switch(m_currentMsg.msgId)
   {
     case MsgID::Type::LS:
@@ -166,6 +193,13 @@ int Server::handleGetCmd()
 
 int Server::handlePutCmd()
 {
+  if(!m_fileName.empty())
+  {
+    FileUtils::putFile(m_fileName.c_str(), m_data.c_str());
+    m_fileName = "";
+  }
+  else
+    m_fileName = m_data;
   return 0;
 }
 

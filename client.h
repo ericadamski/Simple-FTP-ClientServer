@@ -16,13 +16,21 @@
 class Client
 {
 public:
+  
+  enum MsgType
+  {
+    MSG,
+    STRING,
+    OTHER
+  };
+
   Client(std::string addr, std::string port);
   ~Client();
   
   void Connect();
 
-  int Send(void*, int);
-  int Receive(int);
+  int Send(void*, int, MsgType);
+  int Receive();
 
 private:
   int m_connectionSocket;
@@ -33,6 +41,7 @@ private:
   char *m_buffer;
 
   std::string m_data;
+  std::string m_fileName;
 
   struct Header m_currentMsg;
 
