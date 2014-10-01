@@ -21,10 +21,9 @@ int main(int argc, char* argv[])
   while(std::cin)
   {
     std::string line;
+    printf("Please enter the number corresponding to the command to run.\n");
     printf("%s", MENU);
     std::getline(std::cin, line);
-
-    printf("Please enter the number corresponding to the command to run.\n");
 
     if( !line.empty() && isdigit(line.c_str()[0]) )
     {

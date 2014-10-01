@@ -57,13 +57,11 @@ struct LsCmd : Header
 struct GetCmd : Header
 {
   char fileName[MAX_BYTES];
-  char file[MAX_BYTES];
 };
 
 struct PutCmd : Header
 {
   char fileName[MAX_BYTES];
-  char file[MAX_BYTES];
 };
 
 struct HelpCmd : Header

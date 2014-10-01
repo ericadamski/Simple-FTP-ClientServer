@@ -170,24 +170,26 @@ int Client::sendCommand(MsgID::Type type, std::string command)
 
 int Client::sendHeader(MsgID::Type type, std::string command)
 {
-  command.append("\0");
   switch(type)
   {
     case MsgID::Type::LS:
       struct LsCmd ls;
       ls.msgId = type;
+      zeroBuffer(ls.dir, MAX_BYTES);
       strcpy(ls.dir, command.c_str());
       ls.size = sizeof(LsCmd);
       return Send(&ls, ls.size, MsgType::MSG);
     case MsgID::Type::GET:
       struct GetCmd get;
       get.msgId = type;
+      zeroBuffer(get.fileName, MAX_BYTES);
       strcpy(get.fileName, command.c_str());
       get.size = sizeof(GetCmd);
       return Send(&get, get.size, MsgType::MSG);
     case MsgID::Type::PUT:
       struct PutCmd put;
       put.msgId = type;
+      zeroBuffer(put.fileName, MAX_BYTES);
       strcpy(put.fileName, command.c_str());
       put.size = sizeof(PutCmd);
       return Send(&put, put.size, MsgType::MSG);
