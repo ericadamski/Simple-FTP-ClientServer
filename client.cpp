@@ -39,7 +39,7 @@ void Client::Connect()
       {
         switch(msgId)
         {
-          case 1:
+          case 0:
             //ls
             fflush(stdin);
             line = '\0';
@@ -47,7 +47,7 @@ void Client::Connect()
             while( printf("> "), std::getline(std::cin, line), line.empty() );
             sendCommand(MsgID::Type::LS, line);
             break;
-          case 2:
+          case 1:
             //get
             fflush(stdin);
             line = '\0';
@@ -56,7 +56,7 @@ void Client::Connect()
             m_fileName = line;
             sendCommand(MsgID::Type::GET, line);
             break;
-          case 3:
+          case 2:
             //put
             fflush(stdin);
             line = '\0';
@@ -65,13 +65,13 @@ void Client::Connect()
             m_fileName = line;
             sendCommand(MsgID::Type::PUT, line);
             break;
-          case 4:
+          case 3:
             //help
             fflush(stdin);
             line = '\0';
             sendCommand(MsgID::Type::HELP, "");
             break;
-          case 0:
+          case 4:
             sendCommand(MsgID::Type::QUIT, "");
             return;
         }
