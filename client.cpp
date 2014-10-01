@@ -78,6 +78,7 @@ void Client::Connect()
       }
     }
   }
+  sendCommand(MsgID::Type::QUIT, "");
   close(m_connectionSocket);
 }
 
