@@ -51,7 +51,7 @@ void Server::printHelp()
   free(m_buffer);
   HelpCmd msg;
   msg.msgId = MsgID::Type::HELP;
-  std::string help = "Options: \n\t[1] ls \n\t[2] get \n\t[3] put \n\t[4] help \n\t[0] Quit\n";
+  std::string help = "Options: \n\t[1] ls \n\t[2] get \n\t[3] put \n\t[4] help \n\t[0] quit\n";
   strcpy(msg.helpMsg, help.c_str());
   msg.size = sizeof(HelpCmd);
   Send(&msg, msg.size, Server::MsgType::MSG);

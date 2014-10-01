@@ -31,7 +31,8 @@ void Client::Connect()
     std::string line;
     while(sendCommand(MsgID::Type::HELP, ""),
           printf("> "),
-          std::getline(std::cin, line))
+          std::getline(std::cin, line),
+          line != "quit")
     {
       int msgId = MsgID::getMsgID(line);
       if( msgId != -1 )

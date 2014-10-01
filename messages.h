@@ -3,8 +3,6 @@
 
 #define MAX_BYTES 1024
 
-#include <algorithm>
-
 struct MsgID
 {
   enum Type
@@ -31,8 +29,6 @@ struct MsgID
 
   static int getMsgID(std::string type)
   {
-    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
-
     if(type == "ls")
       return 0;
     if(type == "get")
