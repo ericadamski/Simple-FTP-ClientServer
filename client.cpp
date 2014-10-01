@@ -27,16 +27,16 @@ void Client::Connect()
     fprintf(stderr, "ERROR connecting to server.\n");
   else
   {
-    printf("Type the number to execute command [#].\n");
+    printf("Please enter a command.\n");
     std::string line;
     while(sendCommand(MsgID::Type::HELP, ""),
           printf("> "),
-          std::getline(std::cin, line),
-          line != "quit")
+          std::getline(std::cin, line))
     {
-      if( isdigit(line.c_str()[0]) )
+      int msgId = MsgID::getMsgID(line);
+      if( msgId != -1 )
       {
-        switch(atoi(line.c_str()))
+        switch(msgId)
         {
           case 1:
             //ls
@@ -169,6 +169,7 @@ int Client::sendCommand(MsgID::Type type, std::string command)
 
 int Client::sendHeader(MsgID::Type type, std::string command)
 {
+  command.append("\0");
   switch(type)
   {
     case MsgID::Type::LS:

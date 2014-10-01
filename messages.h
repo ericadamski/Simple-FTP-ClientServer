@@ -1,5 +1,5 @@
 #ifndef MESSAGES
-#define MESSAGES
+#define MESSAGES  
 
 #define MAX_BYTES 1024
 
@@ -25,6 +25,23 @@ struct MsgID
     };
 
     return lookup[msgId];
+  }
+
+  static int getMsgID(std::string type)
+  {
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+
+    if(type == "ls")
+      return 0;
+    if(type == "get")
+      return 1;
+    if(type == "put")
+      return 2;
+    if(type == "help")
+      return 3;
+    if(type == "quit")
+      return 4;
+    return -1;
   }
 };
 

@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
   Server *m_server;
   Client *m_client;
 
-  if(argc < 2)
+  if(argc < 3)
   {
     printf("%s", HELP);
     return -1;
@@ -23,6 +23,8 @@ int main(int argc, char* argv[])
     std::string line;
     printf("%s", MENU);
     std::getline(std::cin, line);
+
+    printf("Please enter the number corresponding to the command to run.\n");
 
     if( !line.empty() && isdigit(line.c_str()[0]) )
     {

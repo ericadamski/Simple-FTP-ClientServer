@@ -51,7 +51,7 @@ void Server::printHelp()
   free(m_buffer);
   HelpCmd msg;
   msg.msgId = MsgID::Type::HELP;
-  std::string help = "Options: \n\t[1] ls [dir] \n\t[2] get [filename] \n\t[3] put [filename] \n\t[4] help \n\t[0] Quit\n";
+  std::string help = "Options: \n\t[1] ls \n\t[2] get \n\t[3] put \n\t[4] help \n\t[0] Quit\n";
   strcpy(msg.helpMsg, help.c_str());
   msg.size = sizeof(HelpCmd);
   Send(&msg, msg.size, Server::MsgType::MSG);
@@ -63,6 +63,7 @@ int Server::Send(void *msg, int size, Server::MsgType flags)
     m_send = send(m_acceptSocket, networkize(msg), size, 0);
   else
     m_send = send(m_acceptSocket, msg, size, 0);
+  sleep(1);
   if( m_send < 0 )
   {
     fprintf(stderr, "Message send failure.");
@@ -159,7 +160,7 @@ int Server::sendResponse()
 
 int Server::handleLsCmd()
 {
-  std::string cmd = GetStdoutFromCommand(LS_COMMAND.append(" ").append(m_buffer));
+  std::string cmd = GetStdoutFromCommand(std::string (m_buffer));
   struct LsCmd msg;
   msg.msgId = MsgID::Type::LS;
   msg.size = sizeof(LsCmd);
@@ -172,7 +173,7 @@ int Server::handleGetCmd()
 {
   struct Header msg;
   msg.msgId = MsgID::Type::GET;
-  std::string file = FileUtils::getFile(m_buffer);
+  std::string file = FileUtils::getFile(m_data.c_str());
   std::string substring = "";
   int total = file.length();
   msg.size = sizeof(Header) + total;
@@ -185,7 +186,7 @@ int Server::handleGetCmd()
       end += MAX_BYTES;
     else
       end = total;
-    Send((void *)substring.c_str(), substring.length(), Server::MsgType::STRING);
+    Send((char *)substring.c_str(), substring.length(), Server::MsgType::STRING);
     substring = "";
   } 
   return m_send;
@@ -209,20 +210,7 @@ int Server::handlePutCmd()
 
 std::string Server::GetStdoutFromCommand(std::string cmd)
 {
-  std::string data = "";
-  FILE * stream;
-  const int max_buffer = 256;
-  char buffer[max_buffer];
-  
-  system(cmd.append(" > .lsoutput").c_str());
-  stream = fopen(".lsoutput", "r");
-  if (stream)
-  {
-    while (!feof(stream))
-      if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
-    fclose(stream);
-  }
-  return data;
+  return FileUtils::listDirectory(cmd.c_str());
 }
 
 void *Server::networkize(void *msg)

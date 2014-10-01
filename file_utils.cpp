@@ -3,6 +3,7 @@
 #include <string>
 #include <stdio.h>
 #include <fstream>
+#include <dirent.h>
 
 std::string FileUtils::getFile(const char *name)
 {
@@ -37,4 +38,23 @@ int FileUtils::getFileSize(char *name)
   size = ftell(file);
   fclose(file);
   return size;
+}
+
+std::string FileUtils::listDirectory(const char *dir)
+{
+  DIR *dp;
+  struct dirent *ep;
+  std::string data = "";
+
+  dp = opendir (dir);
+  if (dp != NULL)
+    {
+      while ((ep = readdir (dp)))
+        data.append(ep->d_name).append("\n");
+      (void) closedir (dp);
+    }
+  else
+    data = "Couldn't open the directory";
+
+  return data;
 }
