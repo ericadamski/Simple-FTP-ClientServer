@@ -3,6 +3,8 @@
 
 #define MAX_BYTES 1024
 
+#include <algorithm>
+
 struct MsgID
 {
   enum Type
