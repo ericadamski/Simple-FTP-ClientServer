@@ -26,7 +26,7 @@ void FileUtils::putFile(const char *filename, const char *data)
   unsigned int local = sfile.find_last_of("/\\");
   sfile = sfile.substr(local + 1);
   std::ofstream file (sfile);
-  file << data;
+  file.write(data, strlen(data));
   file.close();
 }
 

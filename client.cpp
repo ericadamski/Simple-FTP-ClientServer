@@ -2,11 +2,19 @@
 
 Client::Client(std::string addr, std::string port)
 {
+  if( addr.empty() || port.empty() )
+  {
+    fprintf(stderr, "Address or Port is empty.\n");
+    return;
+  }
   m_portNumber = atoi(port.c_str());
   m_server = gethostbyname(addr.c_str());
 
   if(m_server == NULL)
+  {
     fprintf(stderr, "ERROR no such host.\n");
+    return;
+  }
 
   bzero((char *) &m_serverAddress, sizeof(m_serverAddress));
   m_serverAddress.sin_family = AF_INET;
