@@ -1,5 +1,11 @@
 #include "client.h"
 
+/*
+ *  Constructor
+ *  
+ *  @param addr : IPv4 address to connect to
+ *  @param port : the port on which to connect
+ */
 Client::Client(std::string addr, std::string port)
 {
   if( addr.empty() || port.empty() )
@@ -25,8 +31,17 @@ Client::Client(std::string addr, std::string port)
   m_serverAddress.sin_port = htons(m_portNumber);
 }
 
+/* Destructor */
 Client::~Client(){}
 
+/* Main Loop 
+ *
+ *  Open a socket and try to connect with the server.
+ *  If there is no error request the help from the server and wait for input
+ *
+ *  when the main loop quits, a quit command is sent to the server and the 
+ *  pipe is closed
+ */
 void Client::Connect()
 {
   if(connect(createSocket(),
@@ -90,6 +105,7 @@ void Client::Connect()
   close(m_connectionSocket);
 }
 
+/* Create a client socket */
 int Client::createSocket()
 {
   if((m_connectionSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -97,6 +113,16 @@ int Client::createSocket()
   return m_connectionSocket;
 }
 
+/* Send the information stored in msg over the network
+ *  check for errors in sending and return error otherwise return the 
+ *  number of bytes sent.
+ *
+ *  @param msg   : the data to be send across the network
+ *  @param size  : the size of the data to be sent
+ *  @param flags : this determines if byte order conversions need to happen
+ *
+ *  return value : number of bytes sent, -1 otherwise
+ */
 int Client::Send(void *msg, int size, Client::MsgType flags)
 {
   if(flags == Client::MsgType::MSG)
@@ -113,11 +139,15 @@ int Client::Send(void *msg, int size, Client::MsgType flags)
   return m_send;
 }
 
+// The start of the receive process
 int Client::Receive()
 {
   return ReceiveHeader();
 }
 
+// Receiving the Header which contains the operation to preform 
+//  and the size of the message
+// will return and error if < 0 bytes are received.
 int Client::ReceiveHeader()
 {
   m_receive = recv(m_connectionSocket, &m_currentMsg, sizeof(Header), 0);
@@ -130,6 +160,15 @@ int Client::ReceiveHeader()
   return ReceiveData(hostize(m_currentMsg).size - sizeof(Header));
 }
 
+/*
+ *  @param size : the total number of bytes to be expected 
+ *
+ *  Algorithm
+ *    read a constant number of bytes into a buffer until there is an error
+ *    or no more bytes to receive.
+ *
+ *  @return : the number of bytes received or -1
+ */
 int Client::ReceiveData(int size)
 {
   int bytesToReceive = size;
@@ -154,6 +193,7 @@ int Client::ReceiveData(int size)
   return size;
 }
 
+/* Send the given command, and handle the response, if there is one. */
 int Client::sendCommand(MsgID::Type type, std::string command)
 {
   sendHeader(type, command);
@@ -177,6 +217,7 @@ int Client::sendCommand(MsgID::Type type, std::string command)
   }
 }
 
+/* Send the requests to the server */
 int Client::sendHeader(MsgID::Type type, std::string command)
 {
   switch(type)
@@ -217,18 +258,28 @@ int Client::sendHeader(MsgID::Type type, std::string command)
   }
 }
 
+// Write the given data to the file requested
 int Client::handleGetCmd()
 {
   FileUtils::putFile(m_fileName.c_str(), m_data.c_str());
   return 0;
 }
 
+// Print the output of the LS command to stdout
 int Client::handleLsCmd()
 {
   printBuffer();
   return 0;
 }
 
+/*
+ *  Algorithm
+ *    Read in the file which needs to be sent to the server
+ *    Send a header informing the server of the number of bytes to be prepared
+ *    to receive, then in chunks of 1024 bytes, send the file
+ *
+ *  @return : the number of bytes sent in the last transaction
+ */
 int Client::handlePutCmd()
 {
   struct Header msg;
@@ -252,12 +303,14 @@ int Client::handlePutCmd()
   return m_send;
 }
 
+// Print the output of the HELP command to stdout
 int Client::handleHelpCmd()
 {
   printBuffer();
   return 0;
 }
 
+// Print and free the buffer
 void Client::printBuffer()
 {
   printf("Printing and freeing buffer\n");
@@ -266,12 +319,14 @@ void Client::printBuffer()
   free(m_buffer);
 }
 
+// Sets all entries of a buffer to '\0'
 void Client::zeroBuffer(char *buffer, int size)
 {
   for(int i = 0; i < size; i++)
     buffer[i] = '\0';
 }
 
+// Transforms longs to network byte order
 void *Client::networkize(void *msg)
 {
   Header *tmpH = (Header *)msg;
@@ -279,6 +334,7 @@ void *Client::networkize(void *msg)
   return msg;
 }
 
+// Transforms longs to host byte order
 Header Client::hostize(Header msg)
 {
   msg.size = ntohl(msg.size);

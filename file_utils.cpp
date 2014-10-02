@@ -5,6 +5,14 @@
 #include <fstream>
 #include <dirent.h>
 
+/* Algorithm 
+ *  if you can open the file using a stream
+ *    read the file one character at a time
+ *  close the file stream
+ *  return the data as a string.
+ *
+ *  @param name : name of the file to read from
+*/
 std::string FileUtils::getFile(const char *name)
 {
   std::string data = "";
@@ -20,6 +28,16 @@ std::string FileUtils::getFile(const char *name)
   return data;
 }
 
+/* Algorithm
+ *  if the filename is from a different directory other then '.'
+ *    remove all of the preceding directories until only the file remains.
+ *  open a file with that given name as a output stream
+ *  write the given data to the file
+ *  close the file
+ *
+ *  @param filename : name of the file to write to
+ *  @param data     : the data to write to the file
+*/
 void FileUtils::putFile(const char *filename, const char *data)
 {
   std::string sfile (filename);
@@ -30,6 +48,7 @@ void FileUtils::putFile(const char *filename, const char *data)
   file.close();
 }
 
+//Count the number of characters in the file
 int FileUtils::getFileSize(char *name)
 {
   int size = -1;
@@ -40,6 +59,7 @@ int FileUtils::getFileSize(char *name)
   return size;
 }
 
+//List the directories using the built in C struct dirent
 std::string FileUtils::listDirectory(const char *dir)
 {
   DIR *dp;

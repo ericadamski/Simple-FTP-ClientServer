@@ -32,6 +32,7 @@ void Server::error(const char* message)
   perror(message);
 }
 
+// Create the Socket on which to listen.
 int Server::createSocket()
 {
   int socketId;
@@ -40,12 +41,14 @@ int Server::createSocket()
   return socketId;
 }
 
+// Close both the listen and accept socekts
 void Server::Close()
 {
   close(m_connectionSocket);
   close(m_acceptSocket);
 }
 
+// Send the help command ( when requested ) to the client
 void Server::printHelp()
 {
   free(m_buffer);
@@ -57,6 +60,16 @@ void Server::printHelp()
   Send(&msg, msg.size, Server::MsgType::MSG);
 }
 
+/* Send the information stored in msg over the network
+ *  check for errors in sending and return error otherwise return the 
+ *  number of bytes sent.
+ *
+ *  @param msg   : the data to be send across the network
+ *  @param size  : the size of the data to be sent
+ *  @param flags : this determines if byte order conversions need to happen
+ *
+ *  return value : number of bytes sent, -1 otherwise
+ */
 int Server::Send(void *msg, int size, Server::MsgType flags)
 {
   if( flags == Server::MsgType::MSG )
@@ -69,15 +82,18 @@ int Server::Send(void *msg, int size, Server::MsgType flags)
     fprintf(stderr, "Message send failure.");
     return -1;
   }
-  printf("I sent %d bytes \n.", m_send);
   return m_send;
 }
 
+// The start of the receive process
 int Server::Receive()
 {
   return ReceiveHeader();
 }
 
+// Receiving the Header which contains the operation to preform 
+//  and the size of the message
+// will return and error if < 0 bytes are received.
 int Server::ReceiveHeader()
 {
   m_receive = recv(m_acceptSocket, &m_currentMsg, sizeof(Header), 0);
@@ -89,6 +105,15 @@ int Server::ReceiveHeader()
   return ReceiveData(hostize(m_currentMsg).size - sizeof(Header));
 }
 
+/*
+ *  @param size : the total number of bytes to be expected 
+ *
+ *  Algorithm
+ *    read a constant number of bytes into a buffer until there is an error
+ *    or no more bytes to receive.
+ *
+ *  @return : the number of bytes received or -1
+ */
 int Server::ReceiveData(int size)
 {
   int bytesToReceive = size;
@@ -112,9 +137,14 @@ int Server::ReceiveData(int size)
   return size;
 }
 
+// Sets all entries of a buffer to '\0'
 void Server::zeroBuffer(char *buffer, int size)
 { bzero(buffer, size); }
 
+/*
+ *  Bind to a socket, listen on that socket for connections
+ *  if there is an error connecting close the socket and return
+ */
 void Server::Listen()
 {
   if(bind((m_connectionSocket = createSocket()),
@@ -127,16 +157,19 @@ void Server::Listen()
     printf("Server is now listening on port %d.\n", m_port);
     m_clientLength = sizeof(m_clientAddress);
     m_acceptSocket = accept(m_connectionSocket,
-                            (struct sockaddr *) &m_clientAddress, &m_clientLength);
+                            (struct sockaddr *) &m_clientAddress,
+                            &m_clientLength);
     if(m_acceptSocket < 0)
     {
       fprintf(stderr, "ERROR on accept.\n");
     }
-    while(sendResponse() >= 0);
+    else
+      while(sendResponse() >= 0);
   }
   Close();
 }
 
+// Handle all types of requests from the Client
 int Server::sendResponse()
 {
   Receive();
@@ -158,6 +191,9 @@ int Server::sendResponse()
   }
 }
 
+/*
+ * Send a message to the client with the results of an '/bin/ls'
+ */
 int Server::handleLsCmd()
 {
   std::string cmd = GetStdoutFromCommand(std::string (m_buffer));
@@ -169,6 +205,14 @@ int Server::handleLsCmd()
   return m_send;
 }
 
+/*
+ *  Algorithm
+ *    Read in the file which the client wants to get
+ *    Send a header informing the client of the number of bytes to be prepared
+ *    to receive, then in chunks of 1024 bytes, send the file
+ *
+ *  @return : the number of bytes sent in the last transaction
+ */
 int Server::handleGetCmd()
 {
   struct Header msg;
@@ -186,12 +230,14 @@ int Server::handleGetCmd()
       end += MAX_BYTES;
     else
       end = total;
-    Send((char *)substring.c_str(), substring.length(), Server::MsgType::STRING);
+    Send((char *)substring.c_str(),
+         substring.length(), Server::MsgType::STRING);
     substring = "";
   } 
   return m_send;
 }
 
+// Write the given data to the file
 int Server::handlePutCmd()
 {
   if(!m_fileName.empty())
@@ -208,11 +254,13 @@ int Server::handlePutCmd()
   }
 }
 
+// execute LS command
 std::string Server::GetStdoutFromCommand(std::string cmd)
 {
   return FileUtils::listDirectory(cmd.c_str());
 }
 
+// Transforms longs to network byte order
 void *Server::networkize(void *msg)
 {
   Header *tmpH = (Header *)msg;
@@ -220,6 +268,7 @@ void *Server::networkize(void *msg)
   return msg;
 }
 
+// Transforms longs to host byte order
 Header Server::hostize(Header msg)
 {
   msg.size = ntohl(msg.size);
