@@ -29,10 +29,15 @@ Client::Client(std::string addr, std::string port)
     (char *) &m_serverAddress.sin_addr.s_addr,
     m_server->h_length);
   m_serverAddress.sin_port = htons(m_portNumber);
+  m_free = 0;
 }
 
 /* Destructor */
-Client::~Client(){}
+Client::~Client()
+{
+  if( m_free == 1)
+    free(m_buffer);
+}
 
 /* Main Loop 
  *
@@ -173,14 +178,13 @@ int Client::ReceiveData(int size)
 {
   int bytesToReceive = size;
 
-  printf("Need to receive %d bytes.", size);
-  m_buffer = (char *)malloc(MAX_BYTES);
+  allocBuffer(MAX_BYTES);
   m_data = "";
+
   while( bytesToReceive > 0 )
   {
     zeroBuffer(m_buffer, MAX_BYTES);
     m_receive = recv(m_connectionSocket, m_buffer, MAX_BYTES, 0);
-    printf("Received %d bytes.", m_receive);
     if( m_receive < 0 )
     {
       fprintf(stderr, "ERROR receiving message.");
@@ -313,10 +317,7 @@ int Client::handleHelpCmd()
 // Print and free the buffer
 void Client::printBuffer()
 {
-  printf("Printing and freeing buffer\n");
   printf("%s\n", m_buffer);
-  zeroBuffer(m_buffer, strlen(m_buffer));
-  free(m_buffer);
 }
 
 // Sets all entries of a buffer to '\0'
@@ -339,4 +340,19 @@ Header Client::hostize(Header msg)
 {
   msg.size = ntohl(msg.size);
   return msg;
+}
+
+// Allocates memory into the buffer and creates
+// a flag so it can be free'ed
+void Client::allocBuffer(int size)
+{
+  if(m_free == 1)
+  {
+    free(m_buffer);
+    m_free = 0;
+  }
+
+  m_buffer = (char *)malloc(size);
+  zeroBuffer(m_buffer, size);
+  m_free = 1;
 }

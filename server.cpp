@@ -7,6 +7,7 @@ Server::Server()
   m_address.sin_family = AF_INET;
   m_address.sin_addr.s_addr = INADDR_ANY;
   m_address.sin_port = htons(PORT);
+  m_free = 0;
 }
 
 Server::Server(std::string port)
@@ -20,11 +21,13 @@ Server::Server(std::string port)
   m_address.sin_addr.s_addr = INADDR_ANY;
   m_address.sin_port =
     htons((m_port = atoi(port.c_str())));
+  m_free = 0;
 }
 
 Server::~Server()
 {
-  free(m_buffer);
+  if( m_free == 1)
+    free(m_buffer);
 }
 
 void Server::error(const char* message)
@@ -51,7 +54,6 @@ void Server::Close()
 // Send the help command ( when requested ) to the client
 void Server::printHelp()
 {
-  free(m_buffer);
   HelpCmd msg;
   msg.msgId = MsgID::Type::HELP;
   std::string help = "Options: \n\t[1] ls \n\t[2] get \n\t[3] put \n\t[4] help \n\t[0] quit\n";
@@ -118,7 +120,7 @@ int Server::ReceiveData(int size)
 {
   int bytesToReceive = size;
 
-  m_buffer = (char *)malloc(MAX_BYTES);
+  allocBuffer(MAX_BYTES);
   m_data = "";
 
   while( bytesToReceive > 0 )
@@ -273,4 +275,19 @@ Header Server::hostize(Header msg)
 {
   msg.size = ntohl(msg.size);
   return msg;
+}
+
+// Allocates memory into the buffer and creates
+// a flag so it can be free'ed
+void Server::allocBuffer(int size)
+{
+  if( m_free == 1 )
+  {
+    free(m_buffer);
+    m_free = 0;
+  }
+
+  m_buffer = (char *)malloc(size);
+  m_free = 1;
+  zeroBuffer(m_buffer, size);
 }

@@ -71,6 +71,7 @@ class Server
     int m_send;
     int m_receive;
     int m_port;
+    int m_free;
 
     int createSocket();
     int sendResponse();
@@ -80,7 +81,7 @@ class Server
 
     void zeroBuffer(char*, int);
     void printHelp();
-
+    void allocBuffer(int);
     void *networkize(void*);
     
     Header hostize(Header);

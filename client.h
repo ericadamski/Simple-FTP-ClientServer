@@ -37,6 +37,7 @@ private:
   int m_portNumber;
   int m_send;
   int m_receive;
+  int m_free;
 
   char *m_buffer;
 
@@ -61,6 +62,7 @@ private:
   void zeroBuffer(char*, int size);
   void printBuffer();
   void *networkize(void*);
+  void allocBuffer(int);
  
   Header hostize(Header);
 };
